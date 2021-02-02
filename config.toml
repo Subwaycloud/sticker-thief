@@ -1,0 +1,20 @@
+[telegram]
+token = "1619717837:AAH_-UQJUDaLk_jz8VWh0AOkapdeLOr2S4Q"
+workers = 1
+admins = [1314948019]
+admins_only = false
+maintenance_mode = false
+persistent_temp_data = true
+
+[pyrogram]
+enabled = true
+api_id = 2354487
+api_hash = "70dc6e3737f76e580c38e781dcfc586d"
+
+[sqlite]
+filename = "stickersbot.sqlite"
+
+[bot]
+sourcecode = "https://t.me/NoSourceCode"
+issues = "https://t.me/Iggie"
+channel = "https://t.me/FlixBots"
