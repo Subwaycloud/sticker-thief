@@ -17,4 +17,4 @@ filename = "stickersbot.sqlite"
 [bot]
 sourcecode = "https://t.me/NoSourceCode"
 issues = "https://t.me/Iggie"
-channel = "https://t.me/FlixBots"
+channel = "FlixBots"
