@@ -32,8 +32,10 @@ MAX_PACK_SIZE_ANIMATED = 50
 def on_add_command(update: Update, _):
     logger.info('/add')
 
+    user_id = update.effective_user.id
+
     with session_scope() as session:
-        pack_titles = [t.title for t in session.query(Pack.title).filter_by(user_id=update.effective_user.id).all()]
+        pack_titles = [t.title for t in session.query(Pack.title).filter_by(user_id=user_id).order_by(Pack.title).all()]
 
     if not pack_titles:
         update.message.reply_text(Strings.ADD_STICKER_NO_PACKS)
@@ -53,15 +55,17 @@ def on_pack_title(update: Update, context: CallbackContext):
     logger.info('user selected the pack title from the keyboard')
 
     selected_title = update.message.text
+    user_id = update.effective_user.id
 
     with session_scope() as session:
-        packs_by_title = session.query(Pack).filter_by(title=selected_title, user_id=update.effective_user.id).all()
+        packs_by_title = session.query(Pack).filter_by(title=selected_title, user_id=user_id).order_by(Pack.name).all()
 
         # for some reason, accessing a Pack attribute outside of a session
         # raises an error: https://docs.sqlalchemy.org/en/13/errors.html#object-relational-mapping
         # so we preload the list here in case we're going to need it later, to avoid a more complex handling
         # of the session
-        pack_names = [pack.name.replace('_by_' + context.bot.username, '') for pack in packs_by_title]  # strip the '_by_bot' part
+        by_bot_part = '_by_' + context.bot.username
+        pack_names = [pack.name.replace(by_bot_part, '', 1) for pack in packs_by_title]  # strip the '_by_bot' part
         pack_animated = packs_by_title[0].is_animated  # we need this in case there's only one pack and we need to know whether it is animated or not
 
     if not packs_by_title:
@@ -148,7 +152,7 @@ def add_sticker_to_set(update: Update, context: CallbackContext, animated_pack):
 
     user_emojis = context.user_data['pack'].pop('emojis', None)  # we also remove them
     sticker = StickerFile(bot=context.bot, message=update.message, emojis=user_emojis)
-    sticker.download(prepare_png=True)
+    sticker.download()
 
     pack_link = utils.name2link(name)
 
@@ -175,7 +179,7 @@ def add_sticker_to_set(update: Update, context: CallbackContext, animated_pack):
             logger.debug('rows deleted: %d', deleted_rows or 0)
 
             # get the remaining packs' titles
-            pack_titles = [t.title for t in session.query(Pack.title).filter_by(user_id=update.effective_user.id).all()]
+            pack_titles = [t.title for t in session.query(Pack.title).filter_by(user_id=update.effective_user.id).order_by(Pack.title).all()]
 
         if not pack_titles:
             # user doesn't have any other pack to chose from, reset his status
