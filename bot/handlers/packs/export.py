@@ -88,20 +88,20 @@ def on_sticker_receive(update: Update, context: CallbackContext):
                     sticker_file = StickerFile(
                         sticker,
                         message=DummyMessage(sticker),  # we do not have a Message but we need it,
-                        emojis=sticker.emoji,  # we need to pass them explicitly so we avoid the Pyrogram request
+                        emojis=[sticker.emoji],  # we need to pass them explicitly so we avoid the Pyrogram request
                         temp_file=tempfile.NamedTemporaryFile(dir=tmp_dir)
                     )
 
+                    # noinspection PyBroadException
                     try:
                         sticker_file.download()
-                        pack_emojis[sticker.file_id] = sticker.emojis
-                    except Exception as e:
-                        logger.info('error while downloading and converting a sticker we need to export: %s', str(e))
+                        png_file = utils.webp_to_png(sticker_file.tempfile)
+                        pack_emojis[sticker.file_id] = sticker_file.emojis
+                    except Exception:
+                        logger.info('error while downloading and converting a sticker we need to export', exc_info=True)
                         sticker_file.close()
                         skipped_stickers += 1
                         continue
-
-                    png_file = utils.webp_to_png(sticker_file.tempfile)
 
                     sticker_file.close()
 
@@ -141,7 +141,7 @@ def on_sticker_receive(update: Update, context: CallbackContext):
                 caption='<a href="{}">{}</a>{}'.format(
                     utils.name2link(sticker_set.name),
                     html_escape(sticker_set.title),
-                    " - I wasn't able to export {} stickers!" if skipped_stickers != 0 else ""
+                    Strings.EXPORT_SKIPPED_STICKERS.format(skipped_stickers) if skipped_stickers != 0 else ""
                 ),
                 parse_mode=ParseMode.HTML,
                 quote=True
@@ -161,6 +161,18 @@ def on_animated_sticker_receive(update: Update, _):
     return Status.WAITING_STICKER
 
 
+@decorators.action(ChatAction.TYPING)
+@decorators.failwithmessage
+@decorators.logconversation
+def on_ongoing_async_operation(update: Update, _):
+    logger.info('user sent a message while the export is ongoing')
+
+    update.message.reply_text(Strings.EXPORT_ONGOING)
+
+    # end the conversations maybe?
+    # return ConversationHandler.END  # end the conversations maybe?
+
+
 stickersbot.add_handler(ConversationHandler(
     name='export_command',
     persistent=False,
@@ -170,8 +182,9 @@ stickersbot.add_handler(ConversationHandler(
             MessageHandler(CustomFilters.static_sticker, on_sticker_receive),
             MessageHandler(CustomFilters.animated_sticker, on_animated_sticker_receive),
         ],
-        ConversationHandler.TIMEOUT: [MessageHandler(Filters.all, on_timeout)]
+        # ConversationHandler.TIMEOUT: [MessageHandler(Filters.all, on_timeout)]
+        ConversationHandler.WAITING: [MessageHandler(Filters.all, on_ongoing_async_operation)]
     },
     fallbacks=[CommandHandler(['cancel', 'c', 'done', 'd'], cancel_command)],
-    conversation_timeout=15 * 60
+    # conversation_timeout=15 * 60
 ))

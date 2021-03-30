@@ -211,8 +211,14 @@ class Strings:
 
     EXPORT_ANIMATED_STICKERS_NOT_SUPPORTED = "Exporting animated packs is not supported yet"
 
+    EXPORT_SKIPPED_STICKERS = " - I wasn't able to export {} stickers!"
+
+    EXPORT_ONGOING = "Hold on, the export is processing..."
+
     CLEANUP_NO_PACK = ("It looks like all your packs are still there. No pack has been removed from the database.\n"
-                       "Use /list to see the list of your packs")
+                       "If you just deleted a pack from @stickers, remember that it might take some time for bots "
+                       "to be made aware of its deletion.\n\n"
+                       "You can use /list to see the list of your packs")
 
     CLEANUP_HEADER = "These are the packs that no longer exist and has been removed from the database:\n"
 
